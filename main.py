@@ -21,6 +21,7 @@ from langchain.chains import LLMChain
 #モジュール
 #from tools.tools_chat_LLMmodels import test_hello
 from tools.tools_chat_LLMmodels import chat_LLMmodels
+from tools.tools_SQLDatabaseChain import SQLDatabaseChain_LLMmodels
 
 #####################################################
 # アプリケーション全般
@@ -36,28 +37,43 @@ def main():
     db_path,image_file_pass,rag_method,temperature,opt_system_prompt=options_view_sidebar()
 
     #LLMモデルの設定
-    
-    #ChatOpenAIクラスのインスタンス化
-    #llm = select_model(temperature)
-    #temperature=0.7
-    chat_LLMmodel=chat_LLMmodels()
-    llm = chat_LLMmodel.select_chatmodel(temperature)
-    prompt=ChatPromptTemplate.from_messages([
-        ("system",opt_system_prompt),
-        ("user","{input}")
-    ])
-    #GPTの返答をパースするための処理
-    output_parser=StrOutputParser()
-    # #LCELでの記法
-    # chain = prompt | llm | output_parser
-      
-    # LLMChainの作成 (| 演算子は使わず、LLMChainで組み立て)
-    chain = LLMChain(
-    prompt=prompt,
-    llm=llm,
-    output_key="parsed_output"  # 出力をパースした後のキーを指定
-    )
-    
+    if rag_method=="LLM Nomal chat":
+        #ChatOpenAIクラスのインスタンス化
+        #llm = select_model(temperature)
+        #temperature=0.7
+        instance_LLMmodele=chat_LLMmodels()
+        llm = instance_LLMmodele.select_chatmodel(temperature)
+        prompt=ChatPromptTemplate.from_messages([
+            ("system",opt_system_prompt),
+            ("user","{input}")
+        ])
+        #GPTの返答をパースするための処理
+        output_parser=StrOutputParser()
+        # #LCELでの記法
+        # chain = prompt | llm | output_parser
+        
+        # LLMChainの作成 (| 演算子は使わず、LLMChainで組み立て)
+        chain = LLMChain(
+        prompt=prompt,
+        llm=llm,
+        output_key="parsed_output"  # 出力をパースした後のキーを指定
+        )
+        
+    elif rag_method=="Langchain SQLDatabaseChain":
+        #外部モジュールの利用
+        instance_LLMmodele=SQLDatabaseChain_LLMmodels()
+        chain=instance_LLMmodele.select_SQLDatabaseChain_model(
+            db_path,temperature
+            )
+        
+    elif rag_method=="Langchain create_sql_agent":
+        #
+        print("test")
+        
+    elif rag_method=="OpenAI codeInterpreter":
+        #
+        print("test")
+        
     #メイン画面の表示
     options_view_main(image_file_pass,chain)
 
@@ -124,6 +140,7 @@ def options_view_sidebar():
     rag_method = st.sidebar.radio(
         "SQL RAGの手法を選択してください:",
         [
+            "LLM Nomal chat",
             "Langchain SQLDatabaseChain",
             "Langchain create_sql_agent",
             "OpenAI codeInterpreter",
