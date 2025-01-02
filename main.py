@@ -75,12 +75,12 @@ def main():
         print("test")
         
     #メイン画面の表示
-    options_view_main(image_file_pass,chain)
+    options_view_main(image_file_pass,rag_method,chain)
 
 #####################################################
 # 　メイン画面
 #####################################################
-def options_view_main(image_file_pass,llm_model):
+def options_view_main(image_file_pass,rag_method,llm_model):
     st.title("SQL AGENT app")
 
     # dbフォルダ内のjpgファイルを表示
@@ -116,9 +116,14 @@ def options_view_main(image_file_pass,llm_model):
             #コストを計上する場合に利用
             #with get_openai_callback() as cb:
                 #response = chain.invoke({"input": st.session_state.messages})
-                response = llm_model.invoke({"input": st.session_state.messages})
-                response=response["parsed_output"]
-        st.session_state.messages.append(f"Agent: {response}")  # 仮の応答
+                if rag_method=="LLM Nomal chat":
+                    response = llm_model.invoke({"input": st.session_state.messages})
+                    response=response["parsed_output"]
+                    st.session_state.messages.append(f"Agent: {response}") 
+                elif rag_method=="Langchain SQLDatabaseChain":
+                    response = llm_model.invoke({"query": st.session_state.messages})                
+                    response=response["result"]
+                    st.session_state.messages.append(f"Agent: {response}")  # 仮の応答
 
     # チャット履歴を表示
     for message in st.session_state.messages:
@@ -150,13 +155,13 @@ def options_view_sidebar():
     #LLMの設定
     # サイドバーにスライダーを追加し、temperatureを0から2までの範囲で選択可能にする
     # 初期値は0.0、刻み幅は0.1とする
-    temperature = st.sidebar.slider("Temperature:", min_value=0.0, max_value=2.0, value=0.0, step=0.1)
+    temperature = st.sidebar.slider("Temperature:", min_value=0.0, max_value=1.0, value=0.0, step=0.1)
     # サイドバーにテキスト入力ウィジェットを追加
     opt_system_prompt = st.sidebar.text_input("Enter the system prompt:")
     
     # チャット履歴を削除するボタン
     if st.sidebar.button("チャット履歴を削除"):
-        st.session_state["chat_history"] = []  # 履歴をリセット
+        st.session_state.messages = []  # 履歴をリセット
         st.sidebar.success("チャット履歴が削除されました！")
     
     return db_path,image_file_pass,rag_method,temperature,opt_system_prompt

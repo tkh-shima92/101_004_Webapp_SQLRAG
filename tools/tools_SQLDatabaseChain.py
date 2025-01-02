@@ -1,5 +1,6 @@
 #LLMモデルによるSQL RAG機能モジュール
 #Pythonの標準的なモジュールインポート機能により利用
+#SQLDatabaseChainライブラリ
 
 #####################################################
 #ライブラリインポート
@@ -9,10 +10,17 @@ from langchain.chat_models import ChatOpenAI
 from langchain.sql_database import SQLDatabase
 from langchain_experimental.sql import SQLDatabaseChain
 
+#BaseCacheライブラリ関連
+#BaseCacheライブラリがない、というエラー
+#->下記では解消されなかった
 #from langchain.cache import BaseCache
 #from langchain_core.caches import BaseCache
-from langchain.agents import create_sql_agent
-from langchain.agents.agent_toolkits import SQLDatabaseToolkit
+#BaseCacheライブラリがない、というエラー
+#->以前、「test_ipynb」で試した際は上記エラーはなかったため、同じライブラリをインポートしたところエラー解消
+#確認の結果、以下のいずれでもエラーは解消された
+#したがって、「langchain.agents」に上記ライブラリが同封されていそう
+#from langchain.agents import create_sql_agent
+#from langchain.agents.agent_toolkits import SQLDatabaseToolkit
 from langchain.agents.agent_types import AgentType
 # ====================================
 # クラス設定・初期設定
