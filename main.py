@@ -22,6 +22,7 @@ from langchain.chains import LLMChain
 #from tools.tools_chat_LLMmodels import test_hello
 from tools.tools_chat_LLMmodels import chat_LLMmodels
 from tools.tools_SQLDatabaseChain import SQLDatabaseChain_LLMmodels
+from tools.tools_create_sql_agent import create_sql_agent_LLMmodels
 
 #####################################################
 # アプリケーション全般
@@ -61,14 +62,17 @@ def main():
         
     elif rag_method=="Langchain SQLDatabaseChain":
         #外部モジュールの利用
-        instance_LLMmodele=SQLDatabaseChain_LLMmodels()
-        chain=instance_LLMmodele.select_SQLDatabaseChain_model(
+        instance_LLMmodel=SQLDatabaseChain_LLMmodels()
+        chain=instance_LLMmodel.select_SQLDatabaseChain_model(
             db_path,temperature
             )
         
     elif rag_method=="Langchain create_sql_agent":
-        #
-        print("test")
+        #外部モジュールの利用
+        instance_LLMmodel=create_sql_agent_LLMmodels()
+        chain=instance_LLMmodel.select_create_sql_agent_model(
+            db_path,temperature
+            )
         
     elif rag_method=="OpenAI codeInterpreter":
         #
@@ -124,6 +128,11 @@ def options_view_main(image_file_pass,rag_method,llm_model):
                     response = llm_model.invoke({"query": st.session_state.messages})                
                     response=response["result"]
                     st.session_state.messages.append(f"Agent: {response}")  # 仮の応答
+                elif rag_method=="Langchain create_sql_agent":
+                    response = llm_model.run(st.session_state.messages)                
+                    #response=response["result"]
+                    st.session_state.messages.append(f"Agent: {response}")  # 仮の応答
+                
 
     # チャット履歴を表示
     for message in st.session_state.messages:
@@ -136,10 +145,12 @@ def options_view_main(image_file_pass,rag_method,llm_model):
 def options_view_sidebar():
     st.sidebar.title("設定")
     # DBパスを入力するテキストボックス
-    db_path = st.sidebar.text_input("DBの絶対パスを入力してください:", "")
+    #db_path = st.sidebar.text_input("DBの絶対パスを入力してください:", "")
+    db_path = "./db/chinook.db"
 
     # 画像フォルダを指定するテキストボックス
-    image_file_pass = st.sidebar.text_input("表示したい画像ファイルの絶対パスを入力してください:", "")
+    #image_file_pass = st.sidebar.text_input("表示したい画像ファイルの絶対パスを入力してください:", "")
+    image_file_pass = "./db/sqlite-sample-database-color.jpg"
 
     # ラジオボタンでSQL RAGの手法を選択
     rag_method = st.sidebar.radio(

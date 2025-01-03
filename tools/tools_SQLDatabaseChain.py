@@ -49,7 +49,7 @@ class SQLDatabaseChain_LLMmodels:
         
         llm = ChatOpenAI(
             openai_api_key=self.input_openai_api_key,
-            temperature=0,
+            temperature=temperature,
             model_name="gpt-3.5-turbo",
             streaming=True,
             )
