@@ -59,7 +59,8 @@ class SQLDatabaseChain_LLMmodels:
         return SQLDatabaseChain.from_llm(
             llm,
             db,
-            verbose=True
+            verbose=True,
+            return_intermediate_steps=True
             )
         
         #return SQLDatabaseChain(llm=llm, database=db, verbose=True, use_cache=False)

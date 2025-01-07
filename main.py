@@ -12,11 +12,13 @@ import os
 from PIL import Image
 
 #LLM関連ライブラリ
-import configparser
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain.chains import LLMChain
+from langchain.schema import (SystemMessage, HumanMessage, AIMessage)
+from langchain_community.callbacks import StreamlitCallbackHandler
+from langchain_core.runnables import RunnableConfig
 
 #モジュール
 #from tools.tools_chat_LLMmodels import test_hello
@@ -110,12 +112,32 @@ def options_view_main(image_file_pass,rag_method,llm_model):
     if "messages" not in st.session_state:
         st.session_state.messages = []  # メッセージを保存するためのリスト
 
+    # チャット履歴の表示
+    messages = st.session_state.get('messages', [])
+    for message in messages:
+        if isinstance(message, AIMessage):
+            with st.chat_message('assistant'):
+                st.markdown(message.content)
+        elif isinstance(message, HumanMessage):
+            with st.chat_message('user'):
+                st.markdown(message.content)
+        else:  # isinstance(message, SystemMessage):
+            st.write(f"System message: {message.content}")
+
+    # チャット履歴を表示 ※JSON形式での確認用
+    # for message in st.session_state.messages:
+    #     st.write(message)
+
     # ユーザーからの入力
-    user_input = st.text_input("メッセージを入力してください:", "")
-    if user_input:
+    #user_input = st.text_input("メッセージを入力してください:", "")
+    #if user_input:
+    if user_input := st.chat_input("メッセージを入力してください:"):
         # 入力メッセージを履歴に追加
         #st.session_state["chat_history"].append(f"User: {user_input}")
-        st.session_state.messages.append(f"User: {user_input}")
+        #st.session_state.messages.append(f"User: {user_input}")
+        st.session_state.messages.append(HumanMessage(content=user_input))
+        st.chat_message("user").write(user_input)
+        
         with st.spinner("ChatGPT is typing ..."):
             #コストを計上する場合に利用
             #with get_openai_callback() as cb:
@@ -123,22 +145,39 @@ def options_view_main(image_file_pass,rag_method,llm_model):
                 if rag_method=="LLM Nomal chat":
                     response = llm_model.invoke({"input": st.session_state.messages})
                     response=response["parsed_output"]
-                    st.session_state.messages.append(f"Agent: {response}") 
+                    #st.session_state.messages.append(f"Agent: {response}") 
+                    st.session_state.messages.append(AIMessage(content=response))
                 elif rag_method=="Langchain SQLDatabaseChain":
-                    response = llm_model.invoke({"query": st.session_state.messages})                
-                    response=response["result"]
-                    st.session_state.messages.append(f"Agent: {response}")  # 仮の応答
+                    #StreamlitCallbackHandlerによるエージェント行動の可視化
+                     with st.chat_message("assistant"):
+                         st_cb = StreamlitCallbackHandler(
+                             st.container(), expand_new_thoughts=True)
+                         response = llm_model.invoke(#{"query": st.session_state.messages}
+                                                     {"query":user_input}, 
+                                                     #callbacks=[st_cb]
+                                                     config=RunnableConfig({'callbacks': [st_cb]})
+                                                     ) 
+                         st.write(response["result"])
+                         response_natural_language_output=response["result"]
+                         st.session_state.messages.append(AIMessage(content=response_natural_language_output))
+                    #コードと実行結果の取り出し
+                    # response_SQL_code=response["intermediate_steps"][2]['sql_cmd']
+                    #response_SQL_output=response["intermediate_steps"][3]
+                    
                 elif rag_method=="Langchain create_sql_agent":
-                    response = llm_model.run(st.session_state.messages)                
-                    #response=response["result"]
-                    st.session_state.messages.append(f"Agent: {response}")  # 仮の応答
+                    #StreamlitCallbackHandlerによるエージェント行動の可視化
+                     with st.chat_message("assistant"):
+                         st_cb = StreamlitCallbackHandler(
+                             st.container(), expand_new_thoughts=True)
+                         #response = llm_model.run(st.session_state.messages)
+                         response = llm_model.invoke({"input":user_input}, 
+                                                     config=RunnableConfig({'callbacks': [st_cb]})
+                                                     ) 
+                         st.write(response["output"])
+                         #response=response["result"]
+                         #st.session_state.messages.append(f"Agent: {response}")  # 仮の応答
+                         st.session_state.messages.append(AIMessage(content=response["output"]))
                 
-
-    # チャット履歴を表示
-    for message in st.session_state.messages:
-        st.write(message)
-
-
 #####################################################
 # サイドバー
 #####################################################
