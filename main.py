@@ -12,7 +12,8 @@ import os
 from PIL import Image
 
 #LLM関連ライブラリ
-from langchain.chat_models import ChatOpenAI
+#from langchain.chat_models import ChatOpenAI
+from langchain_community.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain.chains import LLMChain
@@ -25,6 +26,7 @@ from langchain_core.runnables import RunnableConfig
 from tools.tools_chat_LLMmodels import chat_LLMmodels
 from tools.tools_SQLDatabaseChain import SQLDatabaseChain_LLMmodels
 from tools.tools_create_sql_agent import create_sql_agent_LLMmodels
+from tools.tools_DB_control import DBtool_SQLite3
 
 #####################################################
 # アプリケーション全般
@@ -65,6 +67,7 @@ def main():
     elif rag_method=="Langchain SQLDatabaseChain":
         #外部モジュールの利用
         instance_LLMmodel=SQLDatabaseChain_LLMmodels()
+                
         chain=instance_LLMmodel.select_SQLDatabaseChain_model(
             db_path,temperature
             )
@@ -128,6 +131,9 @@ def options_view_main(image_file_pass,rag_method,llm_model):
     # for message in st.session_state.messages:
     #     st.write(message)
 
+    #外部モジュールの利用
+    instance_outputDB=DBtool_SQLite3()
+
     # ユーザーからの入力
     #user_input = st.text_input("メッセージを入力してください:", "")
     #if user_input:
@@ -146,6 +152,7 @@ def options_view_main(image_file_pass,rag_method,llm_model):
                     response = llm_model.invoke({"input": st.session_state.messages})
                     response=response["parsed_output"]
                     #st.session_state.messages.append(f"Agent: {response}") 
+                    instance_outputDB.save_to_db(user_input, response)
                     st.session_state.messages.append(AIMessage(content=response))
                 elif rag_method=="Langchain SQLDatabaseChain":
                     #StreamlitCallbackHandlerによるエージェント行動の可視化
@@ -159,7 +166,8 @@ def options_view_main(image_file_pass,rag_method,llm_model):
                                                      ) 
                          st.write(response["result"])
                          response_natural_language_output=response["result"]
-                         st.session_state.messages.append(AIMessage(content=response_natural_language_output))
+                         instance_outputDB.save_to_db(user_input, response_natural_language_output)
+                         st.session_state.messages.append(AIMessage(content=response_natural_language_output))                         
                     #コードと実行結果の取り出し
                     # response_SQL_code=response["intermediate_steps"][2]['sql_cmd']
                     #response_SQL_output=response["intermediate_steps"][3]
@@ -176,6 +184,7 @@ def options_view_main(image_file_pass,rag_method,llm_model):
                          st.write(response["output"])
                          #response=response["result"]
                          #st.session_state.messages.append(f"Agent: {response}")  # 仮の応答
+                         instance_outputDB.save_to_db(user_input, response["output"])
                          st.session_state.messages.append(AIMessage(content=response["output"]))
                 
 #####################################################
